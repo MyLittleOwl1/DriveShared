@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Enlaces Directos de Google Drive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --background: #F3F4F6;
+            --surface: #FFFFFF;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --error: #EF4444;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .container {
+            background-color: var(--surface);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 36rem;
+            padding: 2.5rem;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .btn-clear {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn-clear.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .btn-clear:hover {
+            color: var(--text-main);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.875rem 2.75rem 0.875rem 2.75rem;
+            border: 2px solid #9CA3AF;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            outline: none;
+            color: var(--text-main);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        button.btn-primary {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.875rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: inherit;
+        }
+
+        button.btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .error-message.visible {
+            display: flex;
+        }
+
+        .results {
+            margin-top: 2rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .results.visible {
+            display: flex;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card {
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+        }
+
+        .result-header i {
+            color: var(--primary);
+        }
+
+        .link-container {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        @media (min-width: 640px) {
+            .link-container {
+                flex-direction: row;
+            }
+        }
+
+        .link-input {
+            flex: 1;
+            padding: 0.75rem;
+            background-color: var(--surface);
+            border: 2px solid #9CA3AF;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            user-select: all;
+            min-width: 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 2.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            background-color: var(--border);
+        }
+
+        .btn-action.copied {
+            background-color: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .btn-small {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-small:hover {
+            background-color: var(--border);
+        }
+
+        .btn-action a {
+            color: inherit;
+            text-decoration: none;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-section {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .qr-section.visible {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .qr-section p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .save-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: none;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .save-section.visible {
+            display: flex;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .save-form {
+            display: flex;
+            gap: 0.5rem;
+            flex-direction: column;
+        }
+
+        @media (min-width: 480px) {
+            .save-form {
+                flex-direction: row;
+            }
+        }
+
+        .save-form input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #9CA3AF;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .save-form input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-secondary {
+            background-color: var(--surface);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .history-container {
+            margin-top: 2.5rem;
+            display: none;
+        }
+
+        .history-container.visible {
+            display: block;
+        }
+
+        .history-header-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .history-header-title h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .history-header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-text {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .btn-text:hover {
+            text-decoration: underline;
+            color: var(--primary-hover);
+        }
+
+        .btn-text.danger {
+            color: var(--error);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .history-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .history-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .history-card-title {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        .history-card-name {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-card-title i {
+            color: var(--primary);
+            margin-top: 0.2rem;
+            flex-shrink: 0;
+        }
+
+        .history-card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .history-links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .history-link-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .history-link-title {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .history-qr-section {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border);
+        }
+
+        .history-qr-section.visible {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* --- SPA Vistas --- */
+        .view-screen {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .view-screen.active {
+            display: flex;
+        }
+
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-menu {
+            background-color: var(--surface);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-menu i {
+            font-size: 1.5rem;
+            width: 2rem;
+            text-align: center;
+        }
+
+        .btn-menu:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-back {
+            align-self: flex-start;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            padding: 0;
+            font-family: inherit;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Main Menu -->
+        <div id="view-menu" class="view-screen active" style="align-items: center; text-align: center;">
+            <img src="data:image/jpeg;base64,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"
+                alt="Drive Compartido"
+                style="max-width: 100%; height: auto; border-radius: 1rem; margin-bottom: 1.5rem; max-height: 180px; object-fit: contain;">
+            <h1>Herramientas de Google Drive</h1>
+            <p class="subtitle">Selecciona una opción</p>
+            <div class="menu-options">
+                <button class="btn-menu" id="menu-generator-btn">
+                    <i class="fa-solid fa-link"></i>
+                    Generador de Enlaces
+                </button>
+                <button class="btn-menu" id="menu-history-btn">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    Historial Guardado
+                </button>
+            </div>
+        </div>
+
+        <!-- Generator Screen -->
+        <div id="view-generator" class="view-screen">
+            <button class="btn-back" data-target="view-menu"><i class="fa-solid fa-arrow-left"></i> Volver al
+                Menú</button>
+            <h1>Generador de Enlaces Directos</h1>
+            <p class="subtitle">Convierte tu enlace de Google Drive en un enlace de descarga o visualización directa</p>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-link input-icon"></i>
+                    <input type="text" id="drive-link" placeholder="Pega el enlace de Google Drive aquí..."
+                        autocomplete="off">
+                    <button class="btn-clear" id="clear-btn" type="button" title="Borrar enlace">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div id="error-msg" class="error-message">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>El enlace no tiene un formato válido de Google Drive.</span>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="generate-btn">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                Generar Enlaces
+            </button>
+
+            <div class="results" id="results-container">
+                <div class="result-card">
+                    <div class="result-header">
+                        <i class="fa-solid fa-download"></i>
+                        Enlace de Descarga Directa
+                    </div>
+                    <div class="link-container">
+                        <div class="link-input" id="download-link"></div>
+                        <div class="action-buttons">
+                            <button class="btn-action copy-btn" data-target="download-link"
+                                title="Copiar al portapapeles">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                            <button class="btn-action toggle-qr-btn" data-qr-target="download-qr-section"
+                                title="Mostrar/Ocultar Código QR">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </button>
+                            <button class="btn-action" title="Abrir enlace">
+                                <a href="#" id="download-anchor" target="_blank" rel="noopener noreferrer">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="qr-section" id="download-qr-section">
+                        <canvas id="download-qr-canvas"></canvas>
+                        <p>Escanea para descargar directo</p>
+                        <button class="btn-small download-qr-img-btn" data-canvas="download-qr-canvas"
+                            data-filename="qr-descarga.png">
+                            <i class="fa-solid fa-download"></i> Guardar Imagen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-header">
+                        <i class="fa-solid fa-eye"></i>
+                        Enlace de Visualización Directa
+                    </div>
+                    <div class="link-container">
+                        <div class="link-input" id="preview-link"></div>
+                        <div class="action-buttons">
+                            <button class="btn-action copy-btn" data-target="preview-link"
+                                title="Copiar al portapapeles">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                            <button class="btn-action toggle-qr-btn" data-qr-target="preview-qr-section"
+                                title="Mostrar/Ocultar Código QR">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </button>
+                            <button class="btn-action" title="Abrir enlace">
+                                <a href="#" id="preview-anchor" target="_blank" rel="noopener noreferrer">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="qr-section" id="preview-qr-section">
+                        <canvas id="preview-qr-canvas"></canvas>
+                        <p>Escanea para ver el archivo</p>
+                        <button class="btn-small download-qr-img-btn" data-canvas="preview-qr-canvas"
+                            data-filename="qr-vista-previa.png">
+                            <i class="fa-solid fa-download"></i> Guardar Imagen
+                        </button>
+                    </div>
+                </div>
+
+                <div class="save-section" id="save-section">
+                    <p class="subtitle" style="margin-bottom: 0.5rem; text-align: left;">¿Quieres guardar estos enlaces
+                        para después?</p>
+                    <div class="save-form">
+                        <input type="text" id="save-name-input" placeholder="Ej: Documento PDF" autocomplete="off">
+                        <button class="btn-secondary" id="save-link-btn">
+                            <i class="fa-solid fa-bookmark"></i> Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Screen -->
+        <div id="view-history" class="view-screen">
+            <button class="btn-back" data-target="view-menu"><i class="fa-solid fa-arrow-left"></i> Volver al
+                Menú</button>
+            <div class="history-container visible" id="history-container" style="margin-top: 0;">
+                <div class="history-header-title">
+                    <h2><i class="fa-solid fa-clock-rotate-left" style="margin-right: 0.5rem;"></i>Historial Guardado
+                    </h2>
+                    <div class="history-header-actions">
+                        <input type="file" id="import-json-input" accept=".json" style="display: none;">
+                        <button class="btn-text" id="import-history-btn" title="Importar historial desde JSON"><i
+                                class="fa-solid fa-file-import"></i> Importar</button>
+                        <button class="btn-text" id="export-history-btn" title="Exportar historial a JSON"><i
+                                class="fa-solid fa-file-export"></i> Exportar</button>
+                        <button class="btn-text danger" id="clear-history-btn"><i class="fa-solid fa-trash-can"></i>
+                            Borrar</button>
+                    </div>
+                </div>
+
+                <div class="search-container" style="margin-bottom: 1.5rem;">
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                        <input type="text" id="search-history-input" placeholder="Buscar en el historial por título..." autocomplete="off">
+                        <button class="btn-clear" id="clear-search-btn" type="button" title="Borrar búsqueda">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="history-list" id="history-list">
+                    <!-- Elementos del historial -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Lógica de Vistas (SPA) ---
+            const views = document.querySelectorAll('.view-screen');
+            const menuGeneratorBtn = document.getElementById('menu-generator-btn');
+            const menuHistoryBtn = document.getElementById('menu-history-btn');
+            const backButtons = document.querySelectorAll('.btn-back');
+
+            function showView(viewId) {
+                views.forEach(view => {
+                    view.classList.remove('active');
+                });
+                document.getElementById(viewId).classList.add('active');
+
+                if (viewId === 'view-history') {
+                    renderHistory();
+                }
+            }
+
+            menuGeneratorBtn.addEventListener('click', () => showView('view-generator'));
+            menuHistoryBtn.addEventListener('click', () => showView('view-history'));
+
+            backButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showView(btn.getAttribute('data-target'));
+                });
+            });
+
+            // --- Referencias UI ---
+            const generateBtn = document.getElementById('generate-btn');
+            const driveLinkInput = document.getElementById('drive-link');
+            const clearBtn = document.getElementById('clear-btn');
+            const errorMsg = document.getElementById('error-msg');
+            const resultsContainer = document.getElementById('results-container');
+            const downloadLinkDiv = document.getElementById('download-link');
+            const previewLinkDiv = document.getElementById('preview-link');
+            const downloadAnchor = document.getElementById('download-anchor');
+            const previewAnchor = document.getElementById('preview-anchor');
+            const copyButtons = document.querySelectorAll('.copy-btn');
+            const toggleQrButtons = document.querySelectorAll('.toggle-qr-btn');
+            let qriousDownload = null;
+            let qriousPreview = null;
+            let currentLinksToSave = null;
+
+            function fallbackCopyTextToClipboard(text) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                var successful = false;
+                try {
+                    successful = document.execCommand('copy');
+                } catch (err) {
+                    console.error('Fallback: Error al copiar', err);
+                }
+                document.body.removeChild(textArea);
+                return successful;
+            }
+
+            function copyToClipboard(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text).then(() => true).catch((err) => {
+                        console.error('Error con navigator.clipboard:', err);
+                        return fallbackCopyTextToClipboard(text);
+                    });
+                } else {
+                    return Promise.resolve(fallbackCopyTextToClipboard(text));
+                }
+            }
+
+            function extractFileId(url) {
+                // Formato típico: https://drive.google.com/file/d/1WWkkHuxY3DXR3n1u_ue6UrHUriHeWftP/view?usp=sharing
+                const regex = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)(?:\/|$)/;
+                const match = url.match(regex);
+                return match ? match[1] : null;
+            }
+
+            function isValidDriveLink(url) {
+                return url.includes('drive.google.com/file/d/') && url.includes('/view');
+            }
+
+            generateBtn.addEventListener('click', () => {
+                const url = driveLinkInput.value.trim();
+
+                // Reset estados
+                errorMsg.classList.remove('visible');
+                resultsContainer.classList.remove('visible');
+                document.getElementById('download-qr-section').classList.remove('visible');
+                document.getElementById('preview-qr-section').classList.remove('visible');
+                document.getElementById('save-section').classList.remove('visible');
+                currentLinksToSave = null;
+
+                if (!url) {
+                    errorMsg.querySelector('span').textContent = 'Por favor, introduce un enlace.';
+                    errorMsg.classList.add('visible');
+                    return;
+                }
+
+                if (!isValidDriveLink(url)) {
+                    errorMsg.querySelector('span').textContent = 'El enlace no tiene un formato válido. Debe contener "drive.google.com/file/d/" y "/view".';
+                    errorMsg.classList.add('visible');
+                    return;
+                }
+
+                const fileId = extractFileId(url);
+
+                if (fileId) {
+                    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+
+                    downloadLinkDiv.textContent = downloadUrl;
+                    previewLinkDiv.textContent = previewUrl;
+
+                    downloadAnchor.href = downloadUrl;
+                    previewAnchor.href = previewUrl;
+
+                    // Generar o actualizar QRs
+                    if (!qriousDownload) {
+                        qriousDownload = new QRious({ element: document.getElementById('download-qr-canvas'), size: 150, value: downloadUrl });
+                    } else {
+                        qriousDownload.value = downloadUrl;
+                    }
+
+                    if (!qriousPreview) {
+                        qriousPreview = new QRious({ element: document.getElementById('preview-qr-canvas'), size: 150, value: previewUrl });
+                    } else {
+                        qriousPreview.value = previewUrl;
+                    }
+
+                    resultsContainer.classList.add('visible');
+
+                    // Configurar sección de guardar
+                    document.getElementById('save-section').classList.add('visible');
+                    document.getElementById('save-name-input').value = '';
+                    currentLinksToSave = {
+                        id: fileId,
+                        downloadUrl: downloadUrl,
+                        previewUrl: previewUrl,
+                        originalUrl: url
+                    };
+
+                } else {
+                    errorMsg.querySelector('span').textContent = 'No se pudo extraer el ID del archivo del enlace.';
+                    errorMsg.classList.add('visible');
+                }
+            });
+
+            // Soporte para tecla Enter
+            driveLinkInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateBtn.click();
+                }
+            });
+
+            // Mostrar/ocultar botón de limpiar según el contenido del input
+            driveLinkInput.addEventListener('input', () => {
+                if (driveLinkInput.value.length > 0) {
+                    clearBtn.classList.add('visible');
+                } else {
+                    clearBtn.classList.remove('visible');
+                }
+            });
+
+            // Acción del botón de limpiar
+            clearBtn.addEventListener('click', () => {
+                driveLinkInput.value = '';
+                clearBtn.classList.remove('visible');
+                driveLinkInput.focus();
+
+                // Ocultar resultados y errores si están visibles
+                errorMsg.classList.remove('visible');
+                resultsContainer.classList.remove('visible');
+                document.getElementById('download-qr-section').classList.remove('visible');
+                document.getElementById('preview-qr-section').classList.remove('visible');
+                document.getElementById('save-section').classList.remove('visible');
+                currentLinksToSave = null;
+            });
+
+            // Funcionalidad para mostrar/ocultar QR
+            toggleQrButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-qr-target');
+                    const section = document.getElementById(targetId);
+                    section.classList.toggle('visible');
+                });
+            });
+
+            // Funcionalidad para descargar QR como imagen
+            document.querySelectorAll('.download-qr-img-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const canvasId = btn.getAttribute('data-canvas');
+                    const filename = btn.getAttribute('data-filename');
+                    const canvas = document.getElementById(canvasId);
+
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            });
+
+            // Funcionalidad para copiar al portapapeles
+            copyButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    const textToCopy = document.getElementById(targetId).textContent;
+
+                    copyToClipboard(textToCopy).then((success) => {
+                        if (success) {
+                            // Estado de éxito
+                            const icon = btn.querySelector('i');
+                            icon.classList.remove('fa-copy', 'fa-regular');
+                            icon.classList.add('fa-check', 'fa-solid');
+                            btn.classList.add('copied');
+
+                            setTimeout(() => {
+                                icon.classList.remove('fa-check', 'fa-solid');
+                                icon.classList.add('fa-copy', 'fa-regular');
+                                btn.classList.remove('copied');
+                            }, 2000);
+                        } else {
+                            alert("No se pudo copiar el texto. Por favor, cópielo manualmente.");
+                        }
+                    });
+                });
+            });
+
+            // --- Lógica del Historial ---
+            const saveBtn = document.getElementById('save-link-btn');
+            const saveInput = document.getElementById('save-name-input');
+
+            saveBtn.addEventListener('click', () => {
+                if (!currentLinksToSave) return;
+
+                let name = saveInput.value.trim();
+                if (!name) {
+                    name = "Enlace Guardado " + new Date().toLocaleTimeString();
+                }
+
+                const linkObj = {
+                    ...currentLinksToSave,
+                    name: name,
+                    timestamp: Date.now()
+                };
+
+                let history = JSON.parse(localStorage.getItem('driveLinksHistory') || '[]');
+                history.unshift(linkObj); // Añadir al principio
+                localStorage.setItem('driveLinksHistory', JSON.stringify(history));
+
+                // Mostrar feedback visual en el botón
+                const originalText = saveBtn.innerHTML;
+                saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> Guardado';
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                }, 2000);
+
+                renderHistory();
+            });
+
+            function renderHistory(searchTerm = '') {
+                const historyList = document.getElementById('history-list');
+                const historyContainer = document.getElementById('history-container');
+                let history = JSON.parse(localStorage.getItem('driveLinksHistory') || '[]');
+
+                if (searchTerm) {
+                    history = history.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                }
+
+                historyContainer.classList.add('visible'); // Siempre visible para permitir importación
+                historyList.innerHTML = '';
+
+                if (history.length === 0) {
+                    if (searchTerm) {
+                        historyList.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 1rem 0;">No se encontraron enlaces con ese término.</p>';
+                    } else {
+                        historyList.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 1rem 0;">No hay enlaces en el historial.</p>';
+                    }
+                    return;
+                }
+
+                history.forEach((item, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'history-card';
+                    card.innerHTML = `
+                        <div class="history-card-header">
+                            <div class="history-card-title">
+                                <i class="fa-regular fa-folder-open"></i>
+                                <span class="history-card-name">${item.name}</span>
+                            </div>
+                            <button class="btn-text btn-delete-history" data-index="${index}" title="Eliminar del historial" style="flex-shrink: 0;">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="history-links">
+                            <!-- Vista Previa -->
+                            <div class="history-link-group">
+                                <div class="history-link-title"><i class="fa-solid fa-eye"></i> Vista Previa</div>
+                                <div class="action-buttons" style="justify-content: flex-start; align-items: center; flex-wrap: wrap;">
+                                    <button class="btn-action history-copy-btn" data-url="${item.previewUrl}" title="Copiar">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                    <button class="btn-action history-qr-btn" data-url="${item.previewUrl}" data-target="qr-pv-${item.timestamp}" title="Ver Código QR">
+                                        <i class="fa-solid fa-qrcode"></i>
+                                    </button>
+                                    <button class="btn-action" title="Abrir">
+                                        <a href="${item.previewUrl}" target="_blank" rel="noopener noreferrer">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                        </a>
+                                    </button>
+                                    <button class="btn-action btn-toggle-extra-links" data-target="extra-links-${item.timestamp}" title="Más enlaces" style="color: var(--primary); border-color: var(--primary);">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="history-qr-section" id="qr-pv-${item.timestamp}">
+                                    <canvas id="canvas-pv-${item.timestamp}"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Enlaces Extra -->
+                            <div id="extra-links-${item.timestamp}" style="display: none; flex-direction: column; gap: 1rem; margin-top: 0.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                                <!-- Enlace Original -->
+                                <div class="history-link-group">
+                                    <div class="history-link-title"><i class="fa-brands fa-google-drive"></i> Enlace Original</div>
+                                    <div class="action-buttons" style="justify-content: flex-start;">
+                                        <button class="btn-action history-copy-btn" data-url="${item.originalUrl}" title="Copiar">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
+                                        <button class="btn-action history-qr-btn" data-url="${item.originalUrl}" data-target="qr-orig-${item.timestamp}" title="Ver Código QR">
+                                            <i class="fa-solid fa-qrcode"></i>
+                                        </button>
+                                        <button class="btn-action" title="Abrir">
+                                            <a href="${item.originalUrl}" target="_blank" rel="noopener noreferrer">
+                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                            </a>
+                                        </button>
+                                    </div>
+                                    <div class="history-qr-section" id="qr-orig-${item.timestamp}">
+                                        <canvas id="canvas-orig-${item.timestamp}"></canvas>
+                                    </div>
+                                </div>
+                                <!-- Descarga -->
+                                <div class="history-link-group">
+                                    <div class="history-link-title"><i class="fa-solid fa-download"></i> Descarga Directa</div>
+                                    <div class="action-buttons" style="justify-content: flex-start;">
+                                        <button class="btn-action history-copy-btn" data-url="${item.downloadUrl}" title="Copiar">
+                                            <i class="fa-regular fa-copy"></i>
+                                        </button>
+                                        <button class="btn-action history-qr-btn" data-url="${item.downloadUrl}" data-target="qr-dl-${item.timestamp}" title="Ver Código QR">
+                                            <i class="fa-solid fa-qrcode"></i>
+                                        </button>
+                                        <button class="btn-action" title="Abrir">
+                                            <a href="${item.downloadUrl}" target="_blank" rel="noopener noreferrer">
+                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                            </a>
+                                        </button>
+                                    </div>
+                                    <div class="history-qr-section" id="qr-dl-${item.timestamp}">
+                                        <canvas id="canvas-dl-${item.timestamp}"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    historyList.appendChild(card);
+                });
+            }
+
+            // Delegación de eventos para la lista del historial
+            document.getElementById('history-list').addEventListener('click', (e) => {
+                // Toggle extra links
+                const toggleBtn = e.target.closest('.btn-toggle-extra-links');
+                if (toggleBtn) {
+                    const targetId = toggleBtn.getAttribute('data-target');
+                    const section = document.getElementById(targetId);
+
+                    const icon = toggleBtn.querySelector('i');
+
+                    if (section.style.display === 'none') {
+                        section.style.display = 'flex';
+                        icon.classList.replace('fa-plus', 'fa-minus');
+                        toggleBtn.setAttribute('title', 'Menos enlaces');
+                    } else {
+                        section.style.display = 'none';
+                        icon.classList.replace('fa-minus', 'fa-plus');
+                        toggleBtn.setAttribute('title', 'Más enlaces');
+                    }
+                    return;
+                }
+
+                // Borrar
+                const deleteBtn = e.target.closest('.btn-delete-history');
+                if (deleteBtn) {
+                    const index = deleteBtn.getAttribute('data-index');
+                    let history = JSON.parse(localStorage.getItem('driveLinksHistory') || '[]');
+                    history.splice(index, 1);
+                    localStorage.setItem('driveLinksHistory', JSON.stringify(history));
+                    renderHistory();
+                    return;
+                }
+
+                // Copiar
+                const copyBtn = e.target.closest('.history-copy-btn');
+                if (copyBtn) {
+                    const url = copyBtn.getAttribute('data-url');
+                    copyToClipboard(url).then((success) => {
+                        if (success) {
+                            const icon = copyBtn.querySelector('i');
+                            icon.classList.remove('fa-copy', 'fa-regular');
+                            icon.classList.add('fa-check', 'fa-solid');
+                            copyBtn.classList.add('copied');
+                            setTimeout(() => {
+                                icon.classList.remove('fa-check', 'fa-solid');
+                                icon.classList.add('fa-copy', 'fa-regular');
+                                copyBtn.classList.remove('copied');
+                            }, 2000);
+                        } else {
+                            alert("No se pudo copiar el texto. Por favor, cópielo manualmente.");
+                        }
+                    });
+                    return;
+                }
+
+                // Mostrar QR
+                const qrBtn = e.target.closest('.history-qr-btn');
+                if (qrBtn) {
+                    const targetId = qrBtn.getAttribute('data-target');
+                    const url = qrBtn.getAttribute('data-url');
+                    const section = document.getElementById(targetId);
+
+                    if (!section.classList.contains('visible')) {
+                        section.classList.add('visible');
+                        // Generar QR si no existe en este canvas
+                        const canvasId = targetId.replace('qr-', 'canvas-');
+                        const canvas = document.getElementById(canvasId);
+                        if (!canvas.getAttribute('data-generated')) {
+                            new QRious({ element: canvas, size: 150, value: url });
+                            canvas.setAttribute('data-generated', 'true');
+                        }
+                    } else {
+                        section.classList.remove('visible');
+                    }
+                    return;
+                }
+            });
+
+            // Borrar todo el historial
+            document.getElementById('clear-history-btn').addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que quieres borrar todo el historial?')) {
+                    localStorage.removeItem('driveLinksHistory');
+                    renderHistory();
+                }
+            });
+
+            // Exportar historial a JSON
+            document.getElementById('export-history-btn').addEventListener('click', () => {
+                const history = localStorage.getItem('driveLinksHistory');
+                if (!history || history === '[]') {
+                    alert('No hay historial para exportar.');
+                    return;
+                }
+
+                const blob = new Blob([history], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `historial_drive_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            // Importar historial desde JSON
+            const importBtn = document.getElementById('import-history-btn');
+            const importInput = document.getElementById('import-json-input');
+
+            importBtn.addEventListener('click', () => {
+                importInput.click();
+            });
+
+            importInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        if (!Array.isArray(importedData)) {
+                            throw new Error("El formato del archivo no es válido (no es un array).");
+                        }
+                        // Sobrescribir historial actual (según solicitud del usuario)
+                        localStorage.setItem('driveLinksHistory', JSON.stringify(importedData));
+                        renderHistory();
+                        alert('Historial importado correctamente. Se han sobrescrito los datos anteriores.');
+                    } catch (error) {
+                        alert('Error al importar el archivo JSON: ' + error.message);
+                    }
+                    importInput.value = ''; // Reset input
+                };
+                reader.readAsText(file);
+            });
+
+            // Funcionalidad de búsqueda en historial
+            const searchHistoryInput = document.getElementById('search-history-input');
+            const clearSearchBtn = document.getElementById('clear-search-btn');
+
+            searchHistoryInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.trim();
+                if (searchTerm.length > 0) {
+                    clearSearchBtn.classList.add('visible');
+                } else {
+                    clearSearchBtn.classList.remove('visible');
+                }
+                renderHistory(searchTerm);
+            });
+
+            clearSearchBtn.addEventListener('click', () => {
+                searchHistoryInput.value = '';
+                clearSearchBtn.classList.remove('visible');
+                searchHistoryInput.focus();
+                renderHistory();
+            });
+
+            // Renderizar el historial al cargar la página
+            renderHistory();
+        });
+    </script>
+</body>
+
+</html>
