@@ -1,0 +1,22 @@
+{
+  "name": "Herramientas de Google Drive",
+  "short_name": "DriveTools",
+  "description": "Generador de enlaces directos y herramientas para Google Drive",
+  "icons": [
+    {
+      "src": "UnsaDriveCmpartido.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "UnsaDriveCmpartido.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "theme_color": "#4F46E5",
+  "background_color": "#ffffff"
+}
