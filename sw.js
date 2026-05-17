@@ -3,7 +3,7 @@ const ASSETS = [
   '/',
   'index.html',
   'manifest.json',
-  'UnsaDriveCmpartido.png'
+  'DriveCompartido.png'
 ];
 
 self.addEventListener('install', (event) => {
