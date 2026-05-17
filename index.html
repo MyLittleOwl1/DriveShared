@@ -873,8 +873,8 @@
                 const fileId = extractFileId(url);
 
                 if (fileId) {
-                    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=t`;
+                    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview?usp=sharing&rm=minimal`;
 
                     downloadLinkDiv.textContent = downloadUrl;
                     previewLinkDiv.textContent = previewUrl;
